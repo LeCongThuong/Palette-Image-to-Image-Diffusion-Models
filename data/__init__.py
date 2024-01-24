@@ -14,24 +14,28 @@ def define_dataloader(logger, opt):
     '''create dataset and set random seed'''
     dataloader_args = opt['datasets'][opt['phase']]['dataloader']['args']
     worker_init_fn = partial(Util.set_seed, gl_seed=opt['seed'])
-
-    phase_dataset, val_dataset = define_dataset(logger, opt)
+    phase_dataset_opt = opt['datasets'][opt['phase']]['which_dataset']
+    phase_dataset = init_obj(phase_dataset_opt, logger, default_file_name='data.dataset', init_type='Dataset')
+    valid_dataset = None
+    if opt['phase'] == 'train':
+        valid_dataset_opt = opt['datasets']['valid']['which_dataset']
+        valid_dataset = init_obj(valid_dataset_opt, logger, default_file_name='data.dataset', init_type='Dataset')
 
     '''create datasampler'''
     data_sampler = None
     if opt['distributed']:
-        data_sampler = DistributedSampler(phase_dataset, shuffle=dataloader_args.get('shuffle', False), num_replicas=opt['world_size'], rank=opt['global_rank'])
+        data_sampler = DistributedSampler(phase_dataset_opt, shuffle=dataloader_args.get('shuffle', False), num_replicas=opt['world_size'], rank=opt['global_rank'])
         dataloader_args.update({'shuffle':False}) # sampler option is mutually exclusive with shuffle 
     
     ''' create dataloader and validation dataloader '''
-    dataloader = DataLoader(phase_dataset, sampler=data_sampler, worker_init_fn=worker_init_fn, **dataloader_args)
+    phase_dataloader = DataLoader(phase_dataset, sampler=data_sampler, worker_init_fn=worker_init_fn, **dataloader_args)
     ''' val_dataloader don't use DistributedSampler to run only GPU 0! '''
-    if opt['global_rank']==0 and val_dataset is not None:
-        dataloader_args.update(opt['datasets'][opt['phase']]['dataloader'].get('val_args',{}))
-        val_dataloader = DataLoader(val_dataset, worker_init_fn=worker_init_fn, **dataloader_args) 
+    if opt['global_rank']==0 and valid_dataset is not None:
+        dataloader_args.update(opt['datasets'][opt['valid']]['dataloader'].get('args',{}))
+        valid_dataloader = DataLoader(valid_dataset, worker_init_fn=worker_init_fn, **dataloader_args) 
     else:
-        val_dataloader = None
-    return dataloader, val_dataloader
+        valid_dataloader = None
+    return phase_dataloader, valid_dataloader
 
 
 def define_dataset(logger, opt):

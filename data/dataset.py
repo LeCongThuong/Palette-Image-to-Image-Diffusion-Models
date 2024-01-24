@@ -4,6 +4,8 @@ from PIL import Image
 import os
 import torch
 import numpy as np
+from pathlib import Path
+import cv2
 
 from .util.mask import (bbox2mask, brush_stroke_mask, get_irregular_mask, random_bbox, random_cropping_bbox)
 
@@ -172,5 +174,50 @@ class ColorizationDataset(data.Dataset):
 
     def __len__(self):
         return len(self.flist)
+    
+    
+class WoodblockDataset(data.Dataset):
+    def __init__(self, data_root, mode="train", image_size=[512, 512]):
+        self.data_root = data_root
+        self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)
+        self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)
+        self.tfs = transforms.Compose([transforms.ToTensor()])
+        self.image_size = image_size
+
+    def __len__(self):
+        return len(self.print_path_list)
+
+    def preprocess_image(self, image_path):
+        """Utility function that load an image an convert to torch."""
+        # open image using OpenCV (HxWxC)
+        img = Image.open(image_path).convert('L')
+        # convert image to torch tensor (CxHxW)
+        img_t: torch.Tensor = self.transform(img)
+        return img_t
+
+    def preprocess_depth(self, depth_path):
+        """Utility function that load an image an convert to torch."""
+        # open image using OpenCV (HxWxC)
+        img: np.ndarray = np.load(depth_path)
+        # unsqueeze to make it 1xHxW
+        img = np.expand_dims(img, axis=0)
+        # cast type as np.float32
+        img = img.astype(np.float32)
+        # convert image to torch tensor (CxHxW)
+        img_t: torch.Tensor = torch.from_numpy(img)
+        return img_t
+
+
+    def __getitem__(self, index):
+        print_path = self.print_path_list[index]
+        depth_path = self.depth_path_list[index]
+        print_img = self.preprocess_image(str(print_path))
+        depth_matrix = self.preprocess_depth(str(depth_path))
+        ret = {
+            'gt_image': depth_matrix,
+            'cond_image': print_img,
+            'path': Path(print_path).stem
+        }
+        return ret
 
 
