@@ -2,7 +2,7 @@
 experiments/*
 datasets/*
 !experiments/clean.sh
-
+palette_woodblock/*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

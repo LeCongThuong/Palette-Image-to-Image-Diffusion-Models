@@ -4,6 +4,7 @@ import importlib
 from datetime import datetime
 import logging
 import pandas as pd
+import numpy as np
 
 import core.util as Util
 
@@ -98,20 +99,31 @@ class VisualWriter():
         self.epoch = epoch
         self.iter = iter
 
-    def save_images(self, results):
-        result_path = os.path.join(self.result_dir, self.phase)
-        os.makedirs(result_path, exist_ok=True)
-        result_path = os.path.join(result_path, str(self.epoch))
-        os.makedirs(result_path, exist_ok=True)
+    def save_images(self, results, phase='train'):
+        if phase != 'test':
+            result_path = os.path.join(self.result_dir, self.phase)
+            os.makedirs(result_path, exist_ok=True)
+            result_path = os.path.join(result_path, str(self.epoch))
+            os.makedirs(result_path, exist_ok=True)
 
-        ''' get names and corresponding images from results[OrderedDict] '''
-        try:
+            ''' get names and corresponding images from results[OrderedDict] '''
+            try:
+                names = results['name']
+                outputs = Util.postprocess(results['result'])
+                for i in range(len(names)):
+                    Image.fromarray(outputs[i]).save(os.path.join(result_path, names[i]))
+            except:
+                raise NotImplementedError('You must specify the context of name and result in save_current_results functions of model.')
+        else:
+            result_path = os.path.join(self.result_dir, self.phase)
+            os.makedirs(result_path, exist_ok=True)
             names = results['name']
-            outputs = Util.postprocess(results['result'])
-            for i in range(len(names)): 
-                Image.fromarray(outputs[i]).save(os.path.join(result_path, names[i]))
-        except:
-            raise NotImplementedError('You must specify the context of name and result in save_current_results functions of model.')
+            for i in range(len(names)):
+                if 'Out' in names[i]:
+                    id_str = "_".join(names[i].split(".")[0].split("_")[1:]) + ".npy"
+                    dest_path =  os.path.join(result_path, id_str)
+                    with open(dest_path, "wb") as f:
+                        np.save(f, results['result'][i])
 
     def close(self):
         self.writer.close()

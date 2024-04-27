@@ -62,12 +62,14 @@ class Palette(BaseModel):
         self.gt_image = self.set_device(data.get('gt_image'))
         self.mask = self.set_device(data.get('mask'))
         self.mask_image = data.get('mask_image')
+        self.t_mean_value = self.set_device(data.get('t_mean_value'))
         self.path = data['path']
         self.batch_size = len(data['path'])
     
     def get_current_visuals(self, phase='train'):
         dict = {
-            'gt_image': (self.gt_image.detach()[:].float().cpu()+1)/2,
+            # 'gt_image': (self.gt_image.detach()[:].float().cpu()+1)/2,
+            'gt_image': (self.gt_image + self.t_mean_value).detach()[:].float().cpu(),
             'cond_image': (self.cond_image.detach()[:].float().cpu()+1)/2,
         }
         if self.task in ['inpainting','uncropping']:
@@ -77,7 +79,7 @@ class Palette(BaseModel):
             })
         if phase != 'train':
             dict.update({
-                'output': (self.output.detach()[:].float().cpu()+1)/2
+                'output': (self.output + self.t_mean_value).detach()[:].float().cpu()
             })
         return dict
 
@@ -187,9 +189,9 @@ class Palette(BaseModel):
                     value = met(self.gt_image, self.output)
                     self.test_metrics.update(key, value)
                     self.writer.add_scalar(key, value)
-                for key, value in self.get_current_visuals(phase='test').items():
-                    self.writer.add_images(key, value)
-                self.writer.save_images(self.save_current_results())
+                # for key, value in self.get_current_visuals(phase='test').items():
+                #     self.writer.add_images(key, value)
+                self.writer.save_images(self.save_current_results(), phase='test')
         
         test_log = self.test_metrics.result()
         ''' save logged informations into log dict ''' 

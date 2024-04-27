@@ -179,9 +179,16 @@ class ColorizationDataset(data.Dataset):
 class WoodblockDataset(data.Dataset):
     def __init__(self, data_root, mode="train", image_size=[512, 512]):
         self.data_root = data_root
-        self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)
-        self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)
-        self.tfs = transforms.Compose([transforms.ToTensor()])
+        if mode != "valid":
+            self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)
+            self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)
+        else:
+            self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)[:3]
+            self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)[:3]
+        
+        self.img_tfs = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Lambda(lambda t: (t * 2) - 1)])
+        
         self.image_size = image_size
 
     def __len__(self):
@@ -192,7 +199,7 @@ class WoodblockDataset(data.Dataset):
         # open image using OpenCV (HxWxC)
         img = Image.open(image_path).convert('L')
         # convert image to torch tensor (CxHxW)
-        img_t: torch.Tensor = self.transform(img)
+        img_t: torch.Tensor = self.img_tfs(img)
         return img_t
 
     def preprocess_depth(self, depth_path):
@@ -205,18 +212,24 @@ class WoodblockDataset(data.Dataset):
         img = img.astype(np.float32)
         # convert image to torch tensor (CxHxW)
         img_t: torch.Tensor = torch.from_numpy(img)
-        return img_t
+        t_mean_value = torch.mean(img_t)
+        # img_t = transforms.Compose([transforms.Normalize(mean=(t_mean_value, ), std=(1, ))])
+        # print("Before: ", img.shape)
+        img_t = img_t - t_mean_value
+        # print("After: ", img_t.shape)
+        return img_t, t_mean_value
 
 
     def __getitem__(self, index):
         print_path = self.print_path_list[index]
         depth_path = self.depth_path_list[index]
         print_img = self.preprocess_image(str(print_path))
-        depth_matrix = self.preprocess_depth(str(depth_path))
+        depth_matrix, t_mean_value = self.preprocess_depth(str(depth_path))
         ret = {
             'gt_image': depth_matrix,
             'cond_image': print_img,
-            'path': Path(print_path).stem
+            't_mean_value': t_mean_value,
+            'path': Path(print_path).name
         }
         return ret
 

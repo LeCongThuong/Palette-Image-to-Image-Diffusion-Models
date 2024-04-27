@@ -31,7 +31,7 @@ def define_dataloader(logger, opt):
     phase_dataloader = DataLoader(phase_dataset, sampler=data_sampler, worker_init_fn=worker_init_fn, **dataloader_args)
     ''' val_dataloader don't use DistributedSampler to run only GPU 0! '''
     if opt['global_rank']==0 and valid_dataset is not None:
-        dataloader_args.update(opt['datasets'][opt['valid']]['dataloader'].get('args',{}))
+        dataloader_args.update(opt['datasets']['valid']['dataloader'].get('args',{}))
         valid_dataloader = DataLoader(valid_dataset, worker_init_fn=worker_init_fn, **dataloader_args) 
     else:
         valid_dataloader = None
