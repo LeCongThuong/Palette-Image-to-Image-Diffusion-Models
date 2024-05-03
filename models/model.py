@@ -62,14 +62,12 @@ class Palette(BaseModel):
         self.gt_image = self.set_device(data.get('gt_image'))
         self.mask = self.set_device(data.get('mask'))
         self.mask_image = data.get('mask_image')
-        self.t_mean_value = self.set_device(data.get('t_mean_value'))
         self.path = data['path']
         self.batch_size = len(data['path'])
     
     def get_current_visuals(self, phase='train'):
         dict = {
-            # 'gt_image': (self.gt_image.detach()[:].float().cpu()+1)/2,
-            'gt_image': (self.gt_image + self.t_mean_value).detach()[:].float().cpu(),
+            'gt_image': (self.gt_image.detach()[:].float().cpu()+1)/2,
             'cond_image': (self.cond_image.detach()[:].float().cpu()+1)/2,
         }
         if self.task in ['inpainting','uncropping']:
@@ -79,7 +77,7 @@ class Palette(BaseModel):
             })
         if phase != 'train':
             dict.update({
-                'output': (self.output + self.t_mean_value).detach()[:].float().cpu()
+                'output': (self.output.detach()[:].float().cpu()+1)/2
             })
         return dict
 
@@ -136,19 +134,10 @@ class Palette(BaseModel):
         with torch.no_grad():
             for val_data in tqdm.tqdm(self.val_loader):
                 self.set_input(val_data)
-                if self.opt['distributed']:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, y_t=self.cond_image, 
-                            y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
-                    else:
-                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, sample_num=self.sample_num)
-                else:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image, 
-                            y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
-                    else:
-                        self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
-                    
+             
+                self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image, 
+                    y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
+                   
                 self.iter += self.batch_size
                 self.writer.set_iter(self.epoch, self.iter, phase='val')
 
@@ -169,19 +158,9 @@ class Palette(BaseModel):
         with torch.no_grad():
             for phase_data in tqdm.tqdm(self.phase_loader):
                 self.set_input(phase_data)
-                if self.opt['distributed']:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, y_t=self.cond_image, 
-                            y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
-                    else:
-                        self.output, self.visuals = self.netG.module.restoration(self.cond_image, sample_num=self.sample_num)
-                else:
-                    if self.task in ['inpainting','uncropping']:
-                        self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image, 
-                            y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
-                    else:
-                        self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
-                        
+                self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image, 
+                    y_0=self.gt_image, mask=self.mask, sample_num=self.sample_num)
+                   
                 self.iter += self.batch_size
                 self.writer.set_iter(self.epoch, self.iter, phase='test')
                 for met in self.metrics:

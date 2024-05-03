@@ -206,29 +206,33 @@ class WoodblockDataset(data.Dataset):
         """Utility function that load an image an convert to torch."""
         # open image using OpenCV (HxWxC)
         img: np.ndarray = np.load(depth_path)
-        # unsqueeze to make it 1xHxW
-        img = np.expand_dims(img, axis=0)
-        # cast type as np.float32
-        img = img.astype(np.float32)
-        # convert image to torch tensor (CxHxW)
-        img_t: torch.Tensor = torch.from_numpy(img)
-        t_mean_value = torch.mean(img_t)
-        # img_t = transforms.Compose([transforms.Normalize(mean=(t_mean_value, ), std=(1, ))])
-        # print("Before: ", img.shape)
-        img_t = img_t - t_mean_value
+        mask = img != img.max()
+        mask = np.expand_dims(mask, axis=0)
+        t_mask = torch.from_numpy(mask)
+        t_img = self.img_tfs(img)
+        # # unsqueeze to make it 1xHxW
+        # img = np.expand_dims(img, axis=0)
+        # # cast type as np.float32
+        # img = img.astype(np.float32)
+        # # convert image to torch tensor (CxHxW)
+        # img_t: torch.Tensor = torch.from_numpy(img)
+        # t_mean_value = torch.mean(img_t)
+        # # img_t = transforms.Compose([transforms.Normalize(mean=(t_mean_value, ), std=(1, ))])
+        # # print("Before: ", img.shape)
+        # img_t = img_t - t_mean_value
         # print("After: ", img_t.shape)
-        return img_t, t_mean_value
+        return t_img, t_mask
 
 
     def __getitem__(self, index):
         print_path = self.print_path_list[index]
         depth_path = self.depth_path_list[index]
         print_img = self.preprocess_image(str(print_path))
-        depth_matrix, t_mean_value = self.preprocess_depth(str(depth_path))
+        depth_matrix, t_mask = self.preprocess_depth(str(depth_path))
         ret = {
             'gt_image': depth_matrix,
             'cond_image': print_img,
-            't_mean_value': t_mean_value,
+            'mask': t_mask,
             'path': Path(print_path).name
         }
         return ret
