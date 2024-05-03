@@ -61,7 +61,7 @@ class Network(BaseNetwork):
     def p_mean_variance(self, y_t, t, clip_denoised: bool, y_cond=None):
         noise_level = extract(self.gammas, t, x_shape=(1, 1)).to(y_t.device)
         y_0_hat = self.predict_start_from_noise(
-                y_t, t=t, noise=self.denoise_fn(torch.cat([y_cond, y_t], dim=1), noise_level))
+                y_t, t=t, noise=self.denoise_fn(torch.cat([y_cond, y_t], dim=1), noise_level)[:, :1, :, :])
 
         if clip_denoised:
             y_0_hat.clamp_(-1., 1.)
@@ -115,12 +115,15 @@ class Network(BaseNetwork):
         y_noisy = self.q_sample(
             y_0=y_0, sample_gammas=sample_gammas.view(-1, 1, 1, 1), noise=noise)
 
-        if mask is not None:
-            noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy*mask+(1.-mask)*y_0], dim=1), sample_gammas)
-            loss = self.loss_fn(mask*noise, mask*noise_hat)
-        else:
-            noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy], dim=1), sample_gammas)
-            loss = self.loss_fn(noise, noise_hat)
+        # if mask is not None:
+        #     noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy*mask+(1.-mask)*y_0], dim=1), sample_gammas)
+        #     loss = self.loss_fn(mask*noise, mask*noise_hat)
+        # else:
+        noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy], dim=1), sample_gammas)
+        noise_loss = self.loss_fn(noise, noise_hat[:, :1, :, :])
+        reconst_loss = self.loss_fn(y_0, noise_hat[:, 1:2, :, :])
+        loss = noise_loss + 10 * reconst_loss
+        # print("Loss: ", loss, noise_loss, reconst_loss)
         return loss
 
 
