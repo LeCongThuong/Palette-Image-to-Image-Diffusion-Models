@@ -5,6 +5,9 @@ from functools import partial
 import numpy as np
 from tqdm import tqdm
 from core.base_network import BaseNetwork
+from IQA_pytorch import SSIM, GMSD, LPIPSvgg, DISTS
+
+
 class Network(BaseNetwork):
     def __init__(self, unet, beta_schedule, module_name='sr3', **kwargs):
         super(Network, self).__init__(**kwargs)
@@ -120,7 +123,9 @@ class Network(BaseNetwork):
             loss = self.loss_fn(mask*noise, mask*noise_hat)
         else:
             noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy], dim=1), sample_gammas)
-            loss = self.loss_fn(noise, noise_hat)
+            noise_loss = self.loss_fn(noise, noise_hat[:, :1, :, :])
+            reconst_loss = self.loss_fn(y_0, noise_hat[:, 1:2, :, :])
+            loss = noise_loss + 10 * reconst_loss
         return loss
 
 
