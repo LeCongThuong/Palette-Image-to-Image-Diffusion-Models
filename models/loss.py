@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from IQA_pytorch import LPIPSvgg
 
 # class mse_loss(nn.Module):
 #     def __init__(self) -> None:
@@ -13,6 +14,23 @@ from torch.autograd import Variable
 
 def mse_loss(output, target):
     return F.mse_loss(output, target)
+
+
+class AuxLoss(nn.Module):
+    def __init__(self, feat_coeff=1.0, pixel_coeff=1.0):
+        super(AuxLoss, self).__init__()
+        self.feat_loss_fn = LPIPSvgg()
+        self.feat_coeff = feat_coeff
+        self.pixel_coeff = pixel_coeff
+
+    def forward(self, output, target):
+        output = (output + 1) / 2.0
+        target = (target + 1) / 2.0
+        pixel_loss = F.mse_loss(output, target)
+        output= output.repeat_interleave(3, dim=1)
+        target = target.repeat_interleave(3, dim=1)
+        feat_loss = self.feat_loss_fn(output, target)
+        return self.pixel_coeff * pixel_loss + self.feat_coeff * feat_loss
 
     
 class FocalLoss(nn.Module):

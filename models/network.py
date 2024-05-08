@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 from tqdm import tqdm
 from core.base_network import BaseNetwork
-from IQA_pytorch import SSIM, GMSD, LPIPSvgg, DISTS
+from models.loss import AuxLoss
 
 
 class Network(BaseNetwork):
@@ -18,6 +18,7 @@ class Network(BaseNetwork):
         
         self.denoise_fn = UNet(**unet)
         self.beta_schedule = beta_schedule
+        self.aux_loss = AuxLoss()
 
     def set_loss(self, loss_fn):
         self.loss_fn = loss_fn
@@ -118,14 +119,13 @@ class Network(BaseNetwork):
         y_noisy = self.q_sample(
             y_0=y_0, sample_gammas=sample_gammas.view(-1, 1, 1, 1), noise=noise)
 
-        if mask is not None:
-            noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy*mask + (1.-mask)*y_0], dim=1), sample_gammas)
-            loss = self.loss_fn(mask*noise, mask*noise_hat)
-        else:
-            noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy], dim=1), sample_gammas)
-            noise_loss = self.loss_fn(noise, noise_hat[:, :1, :, :])
-            reconst_loss = self.loss_fn(y_0, noise_hat[:, 1:2, :, :])
-            loss = noise_loss + 10 * reconst_loss
+        y_noise_mask = y_noisy*mask + (1.-mask)*y_0
+        noise_hat = self.denoise_fn(torch.cat([y_cond, y_noise_mask], dim=1), sample_gammas)
+        noise_loss = self.loss_fn(mask*noise, mask*noise_hat[:, :1, :, :])
+        
+        pred_img = torch.where(mask, noise_hat[:, 1:2, :, :], y_0)
+        aux_loss = self.aux_loss(y_0, pred_img)
+        loss = noise_loss + aux_loss
         return loss
 
 

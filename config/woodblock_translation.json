@@ -96,7 +96,7 @@
                     "module_name": "guided_diffusion", // sr3 | guided_diffusion
                     "unet": {
                         "in_channel": 2,
-                        "out_channel": 1,
+                        "out_channel": 2,
                         "inner_channel": 64,
                         "channel_mults": [
                             1,
