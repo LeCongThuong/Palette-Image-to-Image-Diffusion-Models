@@ -1,5 +1,5 @@
 {
-    "name": "vanila_palette_3", // experiments name
+    "name": "vanila_palette_test", // experiments name
     "gpu_ids": [0], // gpu ids list, default is single 0
     "seed" : -1, // random seed, seed <0 represents randomization not used 
     "finetune_norm": false, // find the parameters to optimize
@@ -56,8 +56,8 @@
             "which_dataset": {
                 "name": "WoodblockDataset", // import Dataset() class / function(not recommend) from default file
                 "args":{
-                    "data_root": "/media/hmi/Transcend/wb_train_val_test_dataset",
-                    "mode": "test"
+                    "data_root": "/media/hmi/Transcend/palette_evaluation",
+                    "mode": "subtest"
                 }
             },
             "dataloader":{
