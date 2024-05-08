@@ -185,7 +185,6 @@ class WoodblockDataset(data.Dataset):
         else:
             self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)[:3]
             self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)[:3]
-        
         self.img_tfs = transforms.Compose([transforms.ToTensor(),
                                     transforms.Lambda(lambda t: (t * 2) - 1)])
         
@@ -206,9 +205,11 @@ class WoodblockDataset(data.Dataset):
         """Utility function that load an image an convert to torch."""
         # open image using OpenCV (HxWxC)
         img: np.ndarray = np.load(depth_path)
-        mask = img != img.max()
-        mask = np.expand_dims(mask, axis=0)
-        t_mask = torch.from_numpy(mask)
+        img = np.asarray(img, dtype=np.float32)
+        # mask = img != img.max()
+        # mask = np.expand_dims(mask, axis=0)
+        # t_mask = torch.from_numpy(mask)
+        t_mask = torch.tensor(img == img.max(), dtype=torch.float16).unsqueeze(0)
         t_img = self.img_tfs(img)
         # # unsqueeze to make it 1xHxW
         # img = np.expand_dims(img, axis=0)

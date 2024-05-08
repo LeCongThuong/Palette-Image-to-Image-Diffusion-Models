@@ -116,7 +116,7 @@ class Network(BaseNetwork):
             y_0=y_0, sample_gammas=sample_gammas.view(-1, 1, 1, 1), noise=noise)
 
         if mask is not None:
-            noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy*mask+(1.-mask)*y_0], dim=1), sample_gammas)
+            noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy*mask + (1.-mask)*y_0], dim=1), sample_gammas)
             loss = self.loss_fn(mask*noise, mask*noise_hat)
         else:
             noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy], dim=1), sample_gammas)
