@@ -177,17 +177,22 @@ class ColorizationDataset(data.Dataset):
     
     
 class WoodblockDataset(data.Dataset):
-    def __init__(self, data_root, mode="train", image_size=[512, 512]):
+    def __init__(self, data_root, mode="train", image_size=[512, 512], start_id=-1):
         self.data_root = data_root
         if mode != "valid":
-            self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)
-            self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)
+            if start_id != -1:
+                self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)[start_id:]
+                self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)[start_id:]
+            else:
+                self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)
+                self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)
+                
         else:
-            self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)[:3]
-            self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)[:3]
+            self.print_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "print_512")).glob("*.png")), key=os.path.basename)[:10]
+            self.depth_path_list = sorted(list(Path(os.path.join(self.data_root, mode, "np_depth_512")).glob("*.npy")), key=os.path.basename)[:10]
         self.img_tfs = transforms.Compose([transforms.ToTensor(),
                                     transforms.Lambda(lambda t: (t * 2) - 1)])
-        
+        print("Number of samples: ", len(self.print_path_list))
         self.image_size = image_size
 
     def __len__(self):
@@ -209,7 +214,7 @@ class WoodblockDataset(data.Dataset):
         # mask = img != img.max()
         # mask = np.expand_dims(mask, axis=0)
         # t_mask = torch.from_numpy(mask)
-        t_mask = torch.tensor(img != img.max(), dtype=torch.float16).unsqueeze(0)
+        t_mask = torch.tensor(img == img.max(), dtype=torch.float16).unsqueeze(0)
         t_img = self.img_tfs(img)
         # # unsqueeze to make it 1xHxW
         # img = np.expand_dims(img, axis=0)

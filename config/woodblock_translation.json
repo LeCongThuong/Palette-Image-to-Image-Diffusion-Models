@@ -1,5 +1,5 @@
 {
-    "name": "vanila_palette_2", // experiments name
+    "name": "vanila_palette", // experiments name
     "gpu_ids": [0], // gpu ids list, default is single 0
     "seed" : -1, // random seed, seed <0 represents randomization not used 
     "finetune_norm": false, // find the parameters to optimize
@@ -10,9 +10,9 @@
         "tb_logger": "tb_logger", // path of tensorboard logger
         "results": "results",
         "checkpoint": "checkpoint",
-        "resume_state": "/mnt/hdd/thuonglc/study/Palette-Image-to-Image-Diffusion-Models/palette_woodblock/train_vanila_palette_240504_182039/checkpoint/4" 
+        // "resume_state": "/mnt/hdd/thuonglc/study/Palette-Image-to-Image-Diffusion-Models/palette_woodblock/train_vanila_palette_240504_182039/checkpoint/4" 
         // "resume_state": "/mnt/thuong_mocban/Palette-Image-to-Image-Diffusion-Models/palette_woodblock/train_woodblock_translation_4_240415_161726/checkpoint/6" // ex: 100, loading .state  and .pth from given epoch and iteration
-        // "resume_state": null
+        "resume_state": null
     },
 
     "datasets": { // train, validation or test
@@ -26,8 +26,8 @@
             },
             "dataloader":{  
                 "args":{ // arguments to initialize train_dataloader
-                    "batch_size": 1, // batch size in each gpu
-                    "num_workers": 8,
+                    "batch_size": 2, // batch size in each gpu
+                    "num_workers": 12,
                     "shuffle": true,
                     "pin_memory": true,
                     "drop_last": true
