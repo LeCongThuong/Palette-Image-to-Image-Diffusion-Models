@@ -17,7 +17,7 @@ def mse_loss(output, target):
 
 
 class AuxLoss(nn.Module):
-    def __init__(self, feat_coeff=1.0, pixel_coeff=1.0):
+    def __init__(self, feat_coeff=5.0, pixel_coeff=100.0):
         super(AuxLoss, self).__init__()
         self.feat_loss_fn = LPIPSvgg()
         self.feat_coeff = feat_coeff
