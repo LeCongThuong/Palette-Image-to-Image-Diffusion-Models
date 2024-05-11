@@ -209,7 +209,7 @@ class WoodblockDataset(data.Dataset):
         # mask = img != img.max()
         # mask = np.expand_dims(mask, axis=0)
         # t_mask = torch.from_numpy(mask)
-        t_mask = torch.tensor(img == img.max(), dtype=torch.float16).unsqueeze(0)
+        t_mask = torch.tensor(img != img.max(), dtype=torch.float16).unsqueeze(0)
         t_img = self.img_tfs(img)
         # # unsqueeze to make it 1xHxW
         # img = np.expand_dims(img, axis=0)
