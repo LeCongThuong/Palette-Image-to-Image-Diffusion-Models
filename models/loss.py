@@ -30,7 +30,6 @@ class AuxLoss(nn.Module):
         output= output.repeat_interleave(3, dim=1)
         target = target.repeat_interleave(3, dim=1)
         feat_loss = self.feat_loss_fn(output, target)
-        print(feat_loss, pixel_loss)
         return self.pixel_coeff * pixel_loss + self.feat_coeff * feat_loss
 
     
