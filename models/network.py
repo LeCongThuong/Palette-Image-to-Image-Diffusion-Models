@@ -5,6 +5,8 @@ from functools import partial
 import numpy as np
 from tqdm import tqdm
 from core.base_network import BaseNetwork
+from models.loss import AuxLoss
+
 class Network(BaseNetwork):
     def __init__(self, unet, beta_schedule, module_name='sr3', **kwargs):
         super(Network, self).__init__(**kwargs)
@@ -14,6 +16,7 @@ class Network(BaseNetwork):
             from .guided_diffusion_modules.unet import UNet
         
         self.denoise_fn = UNet(**unet)
+        self.aux_loss = AuxLoss()  
         self.beta_schedule = beta_schedule
 
     def set_loss(self, loss_fn):
@@ -117,7 +120,10 @@ class Network(BaseNetwork):
 
         if mask is not None:
             noise_hat = self.denoise_fn(torch.cat([y_cond, y_0*(1-mask) + mask*y_noisy], dim=1), sample_gammas)
-            loss = self.loss_fn(mask*noise, mask*noise_hat)
+            y_0_pred = self.predict_start_from_noise(y_noisy, t, noise_hat)
+            noised_loss = self.loss_fn(mask*noise, mask*noise_hat)
+            perceptual_loss = self.aux_loss(y_0, y_0_pred)
+            loss = noised_loss + perceptual_loss
         else:
             noise_hat = self.denoise_fn(torch.cat([y_cond, y_noisy], dim=1), sample_gammas)
             loss = self.loss_fn(noise, noise_hat)
