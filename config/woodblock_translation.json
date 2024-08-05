@@ -20,7 +20,7 @@
             "which_dataset": {  // import designated dataset using arguments 
                 "name": ["data.dataset", "WoodblockDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
-                    "data_root": "/media/hmi/Transcend/wb_train_val_test_dataset",
+                    "data_root": "/mnt/hmi/thuong/wb_train_val_test_dataset/",
                     "mode": "train"
                 } 
             },
@@ -38,7 +38,7 @@
             "which_dataset": {  // import designated dataset using arguments 
                 "name": ["data.dataset", "WoodblockDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
-                    "data_root": "/media/hmi/Transcend/wb_train_val_test_dataset",
+                    "data_root": "/mnt/hmi/thuong/wb_train_val_test_dataset/",
                     "mode": "valid"
                 } 
             },
@@ -56,7 +56,7 @@
             "which_dataset": {
                 "name": "WoodblockDataset", // import Dataset() class / function(not recommend) from default file
                 "args":{
-                    "data_root": "/media/hmi/Transcend/wb_train_val_test_dataset",
+                    "data_root": "/mnt/hmi/thuong/wb_train_val_test_dataset/",
                     "mode": "valid"
                 }
             },
