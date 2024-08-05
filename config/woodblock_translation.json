@@ -1,7 +1,7 @@
 {
-    "name": "vanila_palette", // experiments name
+    "name": "multi_palette_1", // experiments name
     "gpu_ids": [0], // gpu ids list, default is single 0
-    "seed" : -1, // random seed, seed <0 represents randomization not used 
+    "seed" : 1, // random seed, seed <0 represents randomization not used 
     "finetune_norm": false, // find the parameters to optimize
 
     "path": { //set every part file path
@@ -105,10 +105,14 @@
                             8
                         ],
                         "attn_res": [
-                            // 32,
-                            16
-                            // 8
+                            32,
+                            16,
+                            8
                         ],
+                        "num_head_channels": 64,
+                        "res_blocks": 2,
+                        "dropout": 0.2,
+                        "image_size": 512,
                         "num_head_channels": 32,
                         "res_blocks": 2,
                         "dropout": 0.2,
